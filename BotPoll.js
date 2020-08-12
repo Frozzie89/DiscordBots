@@ -1,5 +1,6 @@
 const discord = require('discord.js');
 const botInfo = require('./Bots_infos/BotPoll/infos');
+const embed = require('./modules/Embed');
 const bot = new discord.Client();
 
 bot.login(botInfo.token);
@@ -25,10 +26,12 @@ bot.on('message', function (msg) {
     typedCommand = msg.content.split(" ")[0];
 
     switch (typedCommand) {
+        // display an Embed showing possible commands
         case "!info":
-            channel.send(InfoEmbed(bot, commandInfo));
+            channel.send(embed.InfoEmbed(bot, botInfo, commandInfo));
             break;
 
+        // start a poll
         case "!poll":
             let question = msg.content.replace("!poll ", "");
             question = question.replace(/\{(.*?)\}/g, "");
@@ -48,7 +51,7 @@ bot.on('message', function (msg) {
             else if (args.length > 10)
                 msg.reply("Please put less choices than 10")
             else {
-                channel.send(PollEmbed(bot, msg.member.user.tag, question, args)).then(function (sentEmbed) {
+                channel.send(embed.PollEmbed(bot, msg.member.user.tag, question, args)).then(function (sentEmbed) {
                     for (let i = 0; i < args.length; i++) {
                         sentEmbed.react(reactionEmoji[i]);
                     }
@@ -56,6 +59,7 @@ bot.on('message', function (msg) {
             }
             break;
 
+        // ends the bot processus, only by the admin (hidden in !info)
         case "!end":
             if (msg.member.user.tag == botInfo.admin)
                 bot.emit("disconnect");
@@ -63,6 +67,7 @@ bot.on('message', function (msg) {
                 msg.reply("You aren't allowed to disconnect me");
             break;
 
+        // wrong command
         default:
             if (typedCommand[0] == '!')
                 msg.reply("I don't know this command, type `!info` to display my commands");
@@ -73,43 +78,3 @@ bot.on('message', function (msg) {
 var commandInfo = {};
 commandInfo["!info"] = "Display this message";
 commandInfo["!poll"] = "Start a poll";
-
-
-function PollEmbed(bot, user, question, args) {
-    let resultString = '';
-    for (let i = 0; i < args.length; i++) {
-        resultString += ":regional_indicator_" + String.fromCharCode(96 + i + 1) + ": : " + args[i] + "\n";
-
-    }
-    const Embed = new discord.MessageEmbed();
-    Embed
-        .setColor('#007acd')
-        .setTitle('Poll time !')
-        .setAuthor(bot.user.username)
-        .addField(user + "'s question : ", question)
-        .addField("Choices", resultString)
-    return Embed;
-}
-
-
-function InfoEmbed(bot, fields) {
-    let commandString = '';
-    for (const key in fields) {
-        if (fields.hasOwnProperty(key)) {
-            commandString += '`' + key + '`' + ' : ' + fields[key] + '\n';
-        }
-    }
-
-    const Embed = new discord.MessageEmbed();
-    Embed
-        .setColor('#007acd')
-        .setTitle('Info board')
-        .setAuthor(bot.user.username)
-        .setDescription("Displays all the bot's commands")
-        .attachFiles(['./Bots_infos/BotPoll/BotPollPFP.jpg'])
-        .setThumbnail('attachment://BotPollPFP.jpg')
-        .addField("Commands", commandString)
-        .setTimestamp()
-        .setFooter('Made by ' + botInfo.admin)
-    return Embed;
-}
