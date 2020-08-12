@@ -1,0 +1,15 @@
+{
+  "name": "discordbots",
+  "version": "1.0.0",
+  "description": "Discord bots",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon BotPoll.js"
+  },
+  "author": "Frozzie",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.2.0"
+  }
+}
