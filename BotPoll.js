@@ -1,9 +1,15 @@
 const discord = require('discord.js');
 const botInfo = require('./Bots_infos/BotPoll/infos');
 const embed = require('./modules/Embed');
+const fs = require('fs');
+
 const bot = new discord.Client();
 
 bot.login(botInfo.token);
+
+require('./Bots_infos/BotPoll/saves/polls.json')
+
+
 
 bot.on('ready', function () {
     console.log("\x1b[42m\x1b[30m" + bot.user.username + " is online" + "\x1b[0m");
@@ -14,12 +20,19 @@ bot.on("disconnect", function () {
     bot.destroy();
 });
 
-bot.on("error", function (err) {
+bot.on("error", function () {
     console.error(err);
     console.log("\x1b[45m\x1b[30m" + bot.user.username + " is offline (cause : error)" + "\x1b[0m");
     bot.destroy();
 });
 
+bot.on("messageReactionAdd", function (reaction, user, err) {
+    if (err) throw err;
+    // fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (data, err) {
+    //     let pollsJson = JSON.parse(data)
+
+    // });
+});
 
 bot.on('message', function (msg) {
     let channel = bot.channels.cache.get(msg.channel.id);
@@ -42,24 +55,43 @@ bot.on('message', function (msg) {
             reactionEmoji[2] = "🇨"; reactionEmoji[5] = "🇫"; reactionEmoji[8] = "🇮";
             reactionEmoji[3] = "🇩"; reactionEmoji[6] = "🇬"; reactionEmoji[9] = "🇯";
 
-            let args = "";
+            let args = [];
             if (msg.content.match(/\{(.*?)\}/g))
                 args = /\{(.*?)\}/g.exec(msg.content)[1].split(';');
 
             if (question.includes("!poll") || args == "")
                 msg.reply("wrong format. Here's an example : `!poll do you like me ? {yes;no;maybe}`");
             else if (args.length > 10)
-                msg.reply("Please put less choices than 10")
-            else {
+                msg.reply("Please put less than 10 choices")
+            else { // good format, send !
                 channel.send(embed.PollEmbed(bot, msg.member.user.tag, question, args)).then(function (sentEmbed) {
                     for (let i = 0; i < args.length; i++) {
                         sentEmbed.react(reactionEmoji[i]);
                     }
+
+                    fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
+                        if (err) throw err;
+                        let pollsJson = JSON.parse(data);
+                        pollsJson['polls'].push({ question: question, args: args, votes: new Array(args.length).fill(0) });
+                        fs.writeFile("./Bots_infos/BotPoll/saves/polls.json", JSON.stringify(pollsJson), function (err) {
+                            if (err) throw err;
+                        });
+                    });
                 });
+
+                // fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
+                //     if (err) throw err;
+                //     var pollsJson = JSON.parse(data);
+                //     pollsJson['polls'].push({ question: question, args: args, votes: new Array(args.length).fill(0) });
+                //     fs.writeFile("./Bots_infos/BotPoll/saves/polls.json", JSON.stringify(pollsJson), function (err) {
+                //         if (err) throw err;
+                //     });
+                // });
+
             }
             break;
 
-        // ends the bot processus, only by the admin (hidden in !info)
+        // ends the bot processus, only by the admin (not in !info)
         case "!end":
             if (msg.member.user.tag == botInfo.admin)
                 bot.emit("disconnect");
