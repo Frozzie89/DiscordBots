@@ -1,5 +1,5 @@
 Discord bots :)
 
 # Todo
-- Fix Json add poll
-- vote when react to poll
+- Fix BotPoll Json structure
+- BotPoll vote when react to poll

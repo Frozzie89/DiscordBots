@@ -28,10 +28,13 @@ bot.on("error", function () {
 
 bot.on("messageReactionAdd", function (reaction, user, err) {
     if (err) throw err;
-    // fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (data, err) {
-    //     let pollsJson = JSON.parse(data)
-
-    // });
+    fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
+        let pollsJson = JSON.parse(data)
+        if (pollsJson[reaction.message.id] !== null)
+            //     console.log('react !')
+            // else console.log('no react !')
+            // console.log(pollsJson[reaction.message.id]);     # TODO -> make this work
+    });
 });
 
 bot.on('message', function (msg) {
@@ -72,22 +75,12 @@ bot.on('message', function (msg) {
                     fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
                         if (err) throw err;
                         let pollsJson = JSON.parse(data);
-                        pollsJson['polls'].push({ question: question, args: args, votes: new Array(args.length).fill(0) });
+                        pollsJson['polls'].push({ [sentEmbed.id]: { question: question, args: args, votes: new Array(args.length).fill(0) } });
                         fs.writeFile("./Bots_infos/BotPoll/saves/polls.json", JSON.stringify(pollsJson), function (err) {
                             if (err) throw err;
                         });
                     });
                 });
-
-                // fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
-                //     if (err) throw err;
-                //     var pollsJson = JSON.parse(data);
-                //     pollsJson['polls'].push({ question: question, args: args, votes: new Array(args.length).fill(0) });
-                //     fs.writeFile("./Bots_infos/BotPoll/saves/polls.json", JSON.stringify(pollsJson), function (err) {
-                //         if (err) throw err;
-                //     });
-                // });
-
             }
             break;
 
