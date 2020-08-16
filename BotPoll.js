@@ -13,6 +13,7 @@ require('./Bots_infos/BotPoll/saves/polls.json')
 
 bot.on('ready', function () {
     console.log("\x1b[42m\x1b[30m" + bot.user.username + " is online" + "\x1b[0m");
+    bot.user.setActivity("type !info to show help");
 });
 
 bot.on("disconnect", function () {
@@ -29,11 +30,20 @@ bot.on("error", function () {
 bot.on("messageReactionAdd", function (reaction, user, err) {
     if (err) throw err;
     fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
-        let pollsJson = JSON.parse(data)
-        if (pollsJson[reaction.message.id] !== null)
-            //     console.log('react !')
-            // else console.log('no react !')
-            // console.log(pollsJson[reaction.message.id]);     # TODO -> make this work
+        let pollsJson = JSON.parse(data);
+        let targetPoll = pollsJson.polls.find(poll => poll.msgId === reaction.message.id);
+
+        if (targetPoll !== undefined && user.id != bot.user.id && (!targetPoll.alreadyVoted.includes(user.tag))) {
+            for (let i = 0; i < targetPoll.args.length; i++) {
+                if (reaction.emoji.name == reactionEmoji[i])
+                    targetPoll.votes[i] += 1
+            }
+            targetPoll.alreadyVoted.push(user.tag);
+
+            fs.writeFile("./Bots_infos/BotPoll/saves/polls.json", JSON.stringify(pollsJson), function (err) {
+                if (err) throw err;
+            });
+        }
     });
 });
 
@@ -52,12 +62,6 @@ bot.on('message', function (msg) {
             let question = msg.content.replace("!poll ", "");
             question = question.replace(/\{(.*?)\}/g, "");
 
-            let reactionEmoji = {};
-            reactionEmoji[0] = "🇦";
-            reactionEmoji[1] = "🇧"; reactionEmoji[4] = "🇪"; reactionEmoji[7] = "🇭";
-            reactionEmoji[2] = "🇨"; reactionEmoji[5] = "🇫"; reactionEmoji[8] = "🇮";
-            reactionEmoji[3] = "🇩"; reactionEmoji[6] = "🇬"; reactionEmoji[9] = "🇯";
-
             let args = [];
             if (msg.content.match(/\{(.*?)\}/g))
                 args = /\{(.*?)\}/g.exec(msg.content)[1].split(';');
@@ -67,6 +71,7 @@ bot.on('message', function (msg) {
             else if (args.length > 10)
                 msg.reply("Please put less than 10 choices")
             else { // good format, send !
+
                 channel.send(embed.PollEmbed(bot, msg.member.user.tag, question, args)).then(function (sentEmbed) {
                     for (let i = 0; i < args.length; i++) {
                         sentEmbed.react(reactionEmoji[i]);
@@ -75,7 +80,7 @@ bot.on('message', function (msg) {
                     fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
                         if (err) throw err;
                         let pollsJson = JSON.parse(data);
-                        pollsJson['polls'].push({ [sentEmbed.id]: { question: question, args: args, votes: new Array(args.length).fill(0) } });
+                        pollsJson['polls'].push({ msgId: sentEmbed.id, question: question, args: args, votes: new Array(args.length).fill(0), alreadyVoted: [] });
                         fs.writeFile("./Bots_infos/BotPoll/saves/polls.json", JSON.stringify(pollsJson), function (err) {
                             if (err) throw err;
                         });
@@ -103,3 +108,10 @@ bot.on('message', function (msg) {
 var commandInfo = {};
 commandInfo["!info"] = "Display this message";
 commandInfo["!poll"] = "Start a poll";
+
+
+var reactionEmoji = {};
+reactionEmoji[0] = "🇦";
+reactionEmoji[1] = "🇧"; reactionEmoji[4] = "🇪"; reactionEmoji[7] = "🇭";
+reactionEmoji[2] = "🇨"; reactionEmoji[5] = "🇫"; reactionEmoji[8] = "🇮";
+reactionEmoji[3] = "🇩"; reactionEmoji[6] = "🇬"; reactionEmoji[9] = "🇯";
