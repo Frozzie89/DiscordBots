@@ -2,13 +2,9 @@ const discord = require('discord.js');
 const botInfo = require('./Bots_infos/BotPoll/infos');
 const embed = require('./modules/Embed');
 const fs = require('fs');
-
 const bot = new discord.Client();
 
 bot.login(botInfo.token);
-
-require('./Bots_infos/BotPoll/saves/polls.json')
-
 
 
 bot.on('ready', function () {
@@ -51,6 +47,11 @@ bot.on('message', function (msg) {
     let channel = bot.channels.cache.get(msg.channel.id);
     typedCommand = msg.content.split(" ")[0];
 
+    if (typedCommand[0] == '!')
+        commandTrigger(bot, botInfo, channel, msg, typedCommand);
+});
+
+function commandTrigger(bot, botInfo, channel, msg, typedCommand) {
     switch (typedCommand) {
         // display an Embed showing possible commands
         case "!info":
@@ -67,7 +68,7 @@ bot.on('message', function (msg) {
                 args = /\{(.*?)\}/g.exec(msg.content)[1].split(';');
 
             if (question.includes("!poll") || args == "")
-                msg.reply("wrong format. Here's an example : `!poll do you like me ? {yes;no;maybe}`");
+                msg.reply("format : `!poll question {choice1;choice2;...}`. For example : `!poll do you like me ? {yes;no;maybe}`");
             else if (args.length > 10)
                 msg.reply("Please put less than 10 choices")
             else { // good format, send !
@@ -85,16 +86,24 @@ bot.on('message', function (msg) {
                             if (err) throw err;
                         });
                     });
+
+                    setTimeout(function () {
+                        fs.readFile('./Bots_infos/BotPoll/saves/polls.json', function (err, data) {
+                            if (err) throw err;
+                            let pollsJson = JSON.parse(data);
+                            let targetPoll = pollsJson.polls.find(poll => poll.msgId === sentEmbed.id);
+                            channel.send(embed.resultPollEmbed(bot, msg.member.user.tag, question, args, targetPoll.votes));
+                        });
+                    }, 300000);
                 });
+
             }
             break;
 
         // ends the bot processus, only by the admin (not in !info)
         case "!end":
-            if (msg.member.user.tag == botInfo.admin)
+            if (msg.member.hasPermission("ADMINISTRATOR"))
                 bot.emit("disconnect");
-            else
-                msg.reply("You aren't allowed to disconnect me");
             break;
 
         // wrong command
@@ -103,7 +112,8 @@ bot.on('message', function (msg) {
                 msg.reply("I don't know this command, type `!info` to display my commands");
 
     }
-});
+}
+
 
 var commandInfo = {};
 commandInfo["!info"] = "Display this message";
